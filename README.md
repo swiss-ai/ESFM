@@ -8,6 +8,8 @@ The codebase is based on the Aurora model stack and extends it with ESFM-specifi
 
 ![ESFM MODIS forecasts](https://github.com/user-attachments/assets/3cf8870a-4e5e-450f-af37-bc120cc9b721)
 
+![ESFM ECMWF11k forecasts](https://github.com/user-attachments/assets/cc309b2c-35a1-41c7-a3d4-c127b12aaa87)
+
 
 ## Contents
 
