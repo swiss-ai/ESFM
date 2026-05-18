@@ -4,11 +4,18 @@ This repository contains the ESFM training and evaluation code used for atmosphe
 
 The codebase is based on the Aurora model stack and extends it with ESFM-specific model components, data pipelines, and experiment scripts (both training and evaluation).
 
-![ESFM Teaser Schematic](assets/ESFM-schematic-teaser.png)
+<div align="center">
+  <img src="assets/ESFM-schematic-teaser.png" width="800" />
+</div>
 
-![ESFM MODIS forecasts](https://github.com/user-attachments/assets/3cf8870a-4e5e-450f-af37-bc120cc9b721)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/3cf8870a-4e5e-450f-af37-bc120cc9b721" width="800" />
+</div>
 
-![ESFM ECMWF11k forecasts](https://github.com/user-attachments/assets/cc309b2c-35a1-41c7-a3d4-c127b12aaa87)
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/cc309b2c-35a1-41c7-a3d4-c127b12aaa87" width="800" />
+</div>
 
 
 ## Contents
