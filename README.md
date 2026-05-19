@@ -146,6 +146,8 @@ sbatch scripts/training/train_ESFM_s_wm_ri_pre.sh
 
 ### Single-step inference
 
+For a quick interactive ERA5 visualisation, see [notebooks/inference_ESFMs_on_ERA5.ipynb](notebooks/inference_ESFMs_on_ERA5.ipynb). For actual and efficient inference on local datasets, use the Python and Slurm examples below.
+
 ```bash
 python inference.py --config ./configs/config_ESFM_s_nm.yaml
 ```
