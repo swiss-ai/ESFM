@@ -795,7 +795,7 @@ modis_14to20_tq:
     conf:
         name: modis
         path: 'swissai/a122/MODIS/MODIS_PWV_hourly.zarr'
-        stats_path: '/capstor/store/cscs/swissai/a122/MODIS/normalization_stats_2014-2020.json'
+        stats_path: 'esfm/modis_normalization_stats_2014-2020.json'
         str_task: 6h-forecast
         atmos_levels: [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 850, 925, 1000]
         atmos_vars:  ['t', 'q']
@@ -831,7 +831,7 @@ modis_val_2024_tq:
     conf:
         name: modis
         path: 'swissai/a122/MODIS/MODIS_PWV_hourly.zarr'
-        stats_path: '/capstor/store/cscs/swissai/a122/MODIS/normalization_stats_2014-2020.json'
+        stats_path: 'esfm/modis_normalization_stats_2014-2020.json'
         str_task: 6h-forecast
         atmos_levels: [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 850, 925, 1000]
         atmos_vars:  ['t', 'q']
