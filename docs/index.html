@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="Earth System Foundation Model (ESFM): A unified framework for heterogeneous data integration and forecasting.">
+  <meta name="keywords" content="ESFM, Earth System, Foundation Model, Weather Forecasting, Climate, ERA5, CMIP6, MODIS, Aurora, Swin Transformer">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESFM: Earth System Foundation Model</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma-carousel@4.0.24/dist/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma-slider@2.0.5/dist/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bulma-carousel@4.0.24/dist/js/bulma-carousel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bulma-slider@2.0.5/dist/js/bulma-slider.min.js"></script>
+  <script defer src="./static/js/index.js"></script>
+</head>
+<body>
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">Earth System Foundation Model (ESFM): <br>  A unified framework for heterogeneous data integration and forecasting</h1>
+          <!-- <h2 class="subtitle is-4 publication-subtitle">Heterogeneous data integration and forecasting</h2> -->
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://github.com/firatozdemir">Firat Ozdemir</a><sup>1</sup>,</span>
+            <span class="author-block">
+              Yun Cheng<sup>1</sup>,</span>
+            <span class="author-block">
+              Salman Mohebi<sup>1</sup>,</span>
+            <span class="author-block">
+              Fanny Lehmann<sup>2,5</sup>,</span>
+              <br>
+            <span class="author-block">
+              Simon Adamov<sup>3,6</sup>,</span>
+            <span class="author-block">
+              Zhenyi Zhang<sup>4</sup>,</span>
+            <span class="author-block">
+              Leonardo Trentini<sup>4</sup>,</span>
+            <span class="author-block">
+              Dana Grund<sup>5,6</sup>,</span>
+              <br>
+            <span class="author-block">
+              Oliver Fuhrer<sup>3,6</sup>,</span>
+            <span class="author-block">
+              Torsten Hoefler<sup>7</sup>,</span>
+            <span class="author-block">
+              Siddhartha Mishra<sup>5</sup>,</span>
+              <br>
+            <span class="author-block">
+              Sebastian Schemm<sup>8</sup>,</span>
+            <span class="author-block">
+              Benedikt Soja<sup>4</sup>,</span>
+            <span class="author-block">
+              Mathieu Salzmann<sup>1</sup></span>
+          </div>
+
+          <div class="is-size-6 publication-authors" style="margin-top: 0.5rem;">
+            <span class="author-block"><sup>1</sup>Swiss Data Science Center (SDSC), ETH Zurich &amp; EPFL</span> &nbsp;
+            <span class="author-block"><sup>2</sup>ETH AI Center, ETH Zurich</span> &nbsp;
+            <span class="author-block"><sup>3</sup>MeteoSwiss</span><br>
+            <span class="author-block"><sup>4</sup>Institute of Geodesy and Photogrammetry, ETH Zurich</span> &nbsp;
+            <span class="author-block"><sup>5</sup>Computational and Applied Mathematics Lab (CAML), ETH Zurich</span><br>
+            <span class="author-block"><sup>6</sup>Institute for Atmospheric and Climate Science (IAC), ETH Zurich</span> &nbsp;
+            <span class="author-block"><sup>7</sup>Scalable Parallel Computing Lab (SPCL), ETH Zurich</span><br>
+            <span class="author-block"><sup>8</sup>Dept. of Applied Mathematics and Theoretical Physics, University of Cambridge</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- arXiv -->
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2605.00850"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <!-- PDF -->
+              <span class="link-block">
+                <a href="https://arxiv.org/pdf/2605.00850"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <!-- Code -->
+              <span class="link-block">
+                <a href="https://github.com/swiss-ai/ESFM"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                  </a>
+              </span>
+              <!-- Weights -->
+              <span class="link-block">
+                <a href="https://huggingface.co/ESFM"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-cube"></i>
+                  </span>
+                  <span>Weights</span>
+                  </a>
+              </span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Teaser figure -->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <img src="./static/images/Teaser-ESFM.jpg" alt="ESFM framework"
+           style="width: 100%; border-radius: 6px;">
+      <h2 class="subtitle has-text-centered" style="margin-top: 1rem;">
+        <span class="dnerf">ESFM</span> is a flexible foundation model that ingests multi-modal heterogeneous datasets &mdash;
+        <i>dense gridded reanalysis, climate-model output, sparse satellite swaths, and irregular station data</i> &mdash;
+        and produces ensemble forecasts, all using the same backbone.
+      </h2>
+    </div>
+  </div>
+</section>
+
+
+<!-- Abstract. -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Following their success in other areas, such as language processing, the idea of creating a foundation model for natural sciences has gained traction. 
+            A foundation model for the Earth system is one that has learned the statistical relationships between physical variables and can predict them. 
+            It is a versatile model that excels when finetuned to specific tasks, and not a task-specific weather forecasting model. 
+            To achieve this, foundational models are typically pre-trained on very large datasets.
+            Here, we introduce Earth System Foundation Model (ESFM), a fully open model that builds on the 3D Swin UNet transformer backbone of the pioneering Aurora model.
+            ESFM introduces a series of extensions that significantly increase its functionality, thereby fostering the adoption of foundation models in the climate sciences.
+            Firstly, the encoding scheme and training protocols have been extended to handle diverse datasets, including those containing missing values across all spatio-temporal dimensions such as satellite data, as well as station data, all under one backbone. Axial attention is introduced to capture inter-variable dependencies.
+            As a result, ESFM skillfully predicts variables in regions or on pressure levels where no data is present at the initial time, while preserving inter-variable relationships, for example between temperature, pressure, and humidity. 
+            Individual variable tokenization enables different sets of variables to be shuffled during training and simplifies the process of building extensions for new downstream tasks. 
+            Adaptive layer norm-based ensembles allow for a simple yet effective way to transform deterministic ESFM to a probabilistic FM.
+            We present our findings using dense gridded data, such as ERA5 and CMIP6, as well as regionally masking of dense data, sparse gridded MODIS satellite data, and station data. 
+            Our results demonstrate competitive or superior performance relative to state-of-the-art benchmarks in each domain. 
+            Additional case studies of Super Typhoon Doksuri in July 2023 and the 2024 sudden stratospheric warming events show clear indications of accurate positional and magnitude estimations of extreme weather.  
+            The results show that ESFM retains all the strengths of previous foundation models, such as long term stability, but facilitates the application of foundation models on a variety of downstream tasks.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Contributions -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Key Contributions</h2>
+    <div class="columns is-multiline">
+      <div class="column is-half">
+        <div class="box contribution-box">
+          <p class="title is-5"><span class="icon has-text-info"><i class="fas fa-puzzle-piece"></i></span> Missing data, by design</p>
+          <p>Variable-specific tokenization, together with learnable <code>NaN</code> tokens let ESFM accept observations
+          that are partially or completely missing across any dimension — variable, pressure level, or region.</p>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box contribution-box">
+          <p class="title is-5"><span class="icon has-text-info"><i class="fas fa-layer-group"></i></span> One backbone, many modalities</p>
+          <p>Multi-resolution tokenizers group observations into their respective resolution ranges — coarser CMIP6 datasets, 0.25° ERA5 and sparse satellite data, and
+          in-situ station measurements on an irregular grid — all sharing a single 3D Swin UNet processor backbone.</p>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box contribution-box">
+          <p class="title is-5"><span class="icon has-text-info"><i class="fas fa-dice"></i></span> Probabilistic via AdaLN-Zero</p>
+          <p>A scale-and-shift modulation on the backbone latents turns deterministic ESFM into an
+          ensemble at negligible cost — extendable to thousands of members without re-running the backbone.</p>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box contribution-box">
+          <p class="title is-5"><span class="icon has-text-info"><i class="fab fa-github"></i></span> Fully open community model</p>
+          <p>Training scripts, pretrained weights, and pre-processing code are released — the goal is to lower
+          the barrier for the climate community to finetune ESFM on their own downstream tasks.</p>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Architecture -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Architecture</h2>
+    <div class="content has-text-justified">
+      <p>
+        ESFM tokenizes each input variable independently, then runs <b>axial attention</b> across variable tokens
+        before a <b>Perceiver</b> module reduces the latent variable dimension. Atmospheric and surface tokens flow
+        through separate Perceiver paths; atmospheric tokens are further compressed along pressure levels using a separate <b>Perceiver</b> module, inherited from Aurora.
+      </p>
+    </div>
+
+    <h3 class="title is-4">Encoder</h3>
+    <figure class="image">
+      <img src="./static/images/ESFM-encoder.png" alt="ESFM encoder architecture">
+    </figure>
+    <p class="caption">
+      <b>Encoder.</b> Variable-specific tokenization &rarr; axial attention &rarr; Perceiver compression
+      (variable, then pressure-level for atmospheric tokens). Variable-type, position, area, time, and
+      pressure-level embeddings are added throughout.
+    </p>
+
+    <h3 class="title is-4" style="margin-top: 2rem;">Handling missing data</h3>
+    <figure class="image">
+      <img src="./static/images/nan-token.png" alt="NaN token handling for missing data">
+    </figure>
+    <p class="caption">
+      <b>Missing-data tokens.</b> Partial (left) or completely missing (right) input patches are replaced
+      with a learnable <code>NaN</code> token (red) that still receives the corresponding variable-type
+      and positional embeddings.
+    </p>
+
+    <h3 class="title is-4" style="margin-top: 2rem;">Decoder with AdaLN-Zero ensembles</h3>
+    <figure class="image">
+      <img src="./static/images/esfm-adaln-decoder.png" alt="ESFM decoder with ensemble heads">
+    </figure>
+    <p class="caption">
+      <b>Decoder.</b> A pressure-level Perceiver maps latent atmospheric embeddings to queried target levels
+      (which do not need to match the input levels). AdaLN-Zero modulates the latents per ensemble member, then
+      shared detokenizers reconstruct variable patches. Zero-initialization makes the deterministic&rarr;ensemble
+      extension smooth and non-destructive.
+    </p>
+  </div>
+</section>
+
+
+<!-- Heterogeneous data results carousel -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Forecasting Across Heterogeneous Data</h2>
+    <p class="content has-text-centered">
+      The same ESFM backbone can handle dense reanalysis with held-out regions, sparse satellite swaths,
+      and irregular station data &mdash; without architectural changes.
+    </p>
+
+    <div id="results-carousel" class="carousel results-carousel">
+
+      <!-- EU masked across all variables, ERA5 -->
+      <div class="item item-masked-era5">
+        <div class="has-text-centered">
+          <video poster="" id="masked-era5" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/t_plev_850hPa_input_comparison.mp4" type="video/mp4">
+          </video>
+          <h3 class="title is-5" style="margin-top: 1rem;">Masked ERA5 &mdash; Forecasting Continents With No Initial Data</h3>
+          <p>
+            All variables across Europe are removed from the initial conditions. ESFM still produces
+            a physically consistent forecast inside the masked region, with geostrophic balance and
+            T&ndash;Q saturation envelopes preserved (see Sec. 5.1 of the paper).
+          </p>
+        </div>
+      </div>
+
+      <!-- MODIS -->
+      <div class="item item-modis">
+        <div class="has-text-centered">
+          <video poster="" id="modis" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/modis_pwv_prediction.mp4" type="video/mp4">
+          </video>
+          <h3 class="title is-5" style="margin-top: 1rem;">MODIS Sparse Satellite &mdash; Dense Global PWV from a Narrow Swath</h3>
+          <p>
+            At any given hour, MODIS observes only ~3% of the globe (a narrow polar-orbit swath).
+            ESFM finetuned on MODIS produces a globally dense precipitable-water-vapor forecast and
+            remains stable in 2-week autoregressive rollouts initialized from the sparse observations.
+          </p>
+        </div>
+      </div>
+
+      <!-- Station data -->
+      <div class="item item-station">
+        <div class="has-text-centered">
+          <video poster="" id="station" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/station_prediction.mp4" type="video/mp4">
+          </video>
+          <h3 class="title is-5" style="margin-top: 1rem;">Weather Stations &mdash; Irregular, In-Situ Forecasting</h3>
+          <p>
+            Station data is greedily mapped to an irregular 90&times;180 grid (with exact positional encoding
+            preserved) and tokenized at 1&times;1 patches. ESFM matches SotA station benchmark leader models on
+            Weather-5K and generalizes to held-out stations unseen during training on ECMWF11k dataset.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- Case study: Doksuri -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Case Study I &mdash; Super Typhoon Doksuri (July 2023)</h2>
+    <div class="content has-text-justified">
+      <p>
+        Doksuri is an exceptionally powerful out-of-training-set typhoon. MLWP models typically forecast
+        cyclone <i>position</i> well but underestimate <i>intensity</i>. Despite having the parameter count
+        of Aurora_s, the probabilistic <b>ESFM_s<sup>+</sup></b> ensemble tracks the
+        IBTrACS reference track closely for up to 174&nbsp;h rollout, demonstrating strong localization and
+        intensity performance compared to Aurora_s and Aurora_l.
+      </p>
+    </div>
+
+    <figure class="image" style="margin-top: 1.5rem;">
+      <img src="./static/images/doksuri_maps.png" alt="Doksuri U10m track — ERA5 reference and ensemble means">
+    </figure>
+    <p class="caption" style="margin-top: 0.75rem; text-align: center;">
+      10-meter eastward wind (U10m) during Super Typhoon Doksuri &mdash; ERA5 reference track alongside
+      ensemble means from <b>ESFM_s<sup>+</sup></b>, Aurora_s, and Aurora_l
+      for up to 174&nbsp;h rollout. <b>ESFM_s<sup>+</sup></b> achieves strong localization and
+      intensity tracking despite matching the model size of Aurora_s.
+    </p>
+  </div>
+</section>
+
+
+<!-- Case study: SSW -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Case Study II &mdash; Sudden Stratospheric Warmings 2023/24</h2>
+    <div class="content has-text-justified">
+      <p>
+        The stratosphere strongly modulates surface weather on sub-seasonal timescales, but most data-driven
+        models stop at 50&nbsp;hPa. We finetuned ESFM with 16 pressure levels (adding 10, 20, and 70&nbsp;hPa). This lead to more skillful prediction of the
+        zonal-wind reversal during three SSW events, comparable to ECMWF's numerical S2S model &mdash; and
+        an improved tropospheric response (500&nbsp;hPa geopotential anomaly) over the baseline.
+      </p>
+    </div>
+    <div id="ssw-carousel" class="carousel results-carousel">
+
+      <div class="item">
+        <div class="has-text-centered">
+          <figure class="image" style="display:inline-block; max-width:100%;">
+            <img src="./static/images/ssw_wind_velocity.png" alt="SSW zonal wind at 10 hPa">
+          </figure>
+          <p style="margin-top: 0.75rem;">Eastward wind at 10&nbsp;hPa, 60°N during the Jan/Feb/Mar 2024 SSW events.</p>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="has-text-centered">
+          <figure class="image" style="display:inline-block; max-width:100%;">
+            <img src="./static/images/ssw_stratosphere_troposphere.png" alt="Stratosphere-troposphere coupling">
+          </figure>
+          <p style="margin-top: 0.75rem;">500&nbsp;hPa geopotential anomaly the week after the January SSW &mdash; the
+          stratosphere-finetuned ESFM (right) recovers the ridge/trough pattern more accurately than baseline.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- Long term stability -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Multi-Decadal Stability</h2>
+    <div class="content has-text-justified">
+      <p>
+        A 25-year autoregressive rollout initialized on 02.01.1959 remains stable, preserves the seasonal cycle,
+        and tracks the ERA5 climatology of European 2-meter temperature — without manual constraints on mass
+        or energy balance. This long-term stability is inherited from Aurora's backbone and preserved through
+        ESFM's architectural changes.
+      </p>
+    </div>
+    <figure class="image">
+      <img src="./static/images/multidecadal_stability.png" alt="25-year rollout of 2m temperature over Europe">
+    </figure>
+    <p class="caption">
+      25-year rollout of 2-meter temperature over Europe. Solid line: spatial mean; shaded: spatial min&ndash;max.
+      ERA5 reference in gray/black. Points sampled every 7 days.
+    </p>
+  </div>
+</section>
+
+
+<!-- Physical consistency -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Implicit Physics</h2>
+    <div class="content has-text-justified">
+      <p>
+        Neither the Clausius&ndash;Clapeyron envelope nor geostrophic wind balance is enforced during training.
+        Yet when an entire pressure level or a whole continent is held out from the initial conditions,
+        ESFM's joint distributions of T&ndash;Q and |&nabla;GH|&ndash;wind speed remain physically plausible,
+        tracking the saturation curve and geostrophic slope respectively.
+      </p>
+    </div>
+    <figure class="image">
+      <img src="./static/images/physical_consistency_TQ.png" alt="T-Q joint distribution under masking">
+    </figure>
+    <p class="caption">
+      Joint density of T and Q at 500&nbsp;hPa over Europe, with no masking (left) vs. the full 500&nbsp;hPa
+      level held out from initial conditions (right). Predictions stay below Bolton's q<sub>sat</sub>(T).
+    </p>
+  </div>
+</section>
+
+<!-- Performance table -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">ERA5 Benchmarks</h2>
+    <p class="content has-text-justified">
+      ESFM_s (~110M params, matching Aurora_s) is on par with AIFS and Aurora_s on dense
+      ERA5 forecasting, outperforms GraphCast, SFNO, and IFS control for surface variables, while retaining the flexibility
+      to handle missing/sparse/station data with the same backbone. Below is a 6-hour MAE comparison;
+      see the paper for full rollout and CRPS metrics.
+    </p>
+    <div class="table-container">
+      <table class="table is-striped is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>T850</th>
+            <th>Z500</th>
+            <th>Q850</th>
+            <th>T2m</th>
+            <th>U10m</th>
+            <th>V10m</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>ESFM_s</b></td>
+            <td>0.224</td>
+            <td>12.535</td>
+            <td>2.24e-4</td>
+            <td>0.248</td>
+            <td>0.253</td>
+            <td>0.262</td>
+          </tr>
+          <tr>
+            <td>Aurora_s</td>
+            <td>0.218</td>
+            <td>13.825</td>
+            <td>2.18e-4</td>
+            <td>0.246</td>
+            <td>0.256</td>
+            <td>0.262</td>
+          </tr>
+          <tr>
+            <td>Aurora_l</td>
+            <td>0.167</td>
+            <td>11.687</td>
+            <td>1.76e-4</td>
+            <td>0.194</td>
+            <td>0.195</td>
+            <td>0.201</td>
+          </tr>
+          <tr>
+            <td>AIFS</td>
+            <td>0.182</td>
+            <td>14.679</td>
+            <td>1.90e-4</td>
+            <td>0.219</td>
+            <td>0.232</td>
+            <td>0.238</td>
+          </tr>
+          <tr>
+            <td>GraphCast</td>
+            <td>0.208</td>
+            <td>13.608</td>
+            <td>2.08e-4</td>
+            <td>0.304</td>
+            <td>0.269</td>
+            <td>0.272</td>
+          </tr>
+          <tr>
+            <td>SFNO</td>
+            <td>0.217</td>
+            <td>13.852</td>
+            <td>2.17e-4</td>
+            <td>0.255</td>
+            <td>0.282</td>
+            <td>0.294</td>
+          </tr>
+          <tr>
+            <td>IFS Control</td>
+            <td>0.346</td>
+            <td>15.804</td>
+            <td>3.90e-4</td>
+            <td>0.421</td>
+            <td>0.433</td>
+            <td>0.444</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">
+      6-hour lead-time MAE on the ERA5 test set. Lower is better.
+    </p>
+  </div>
+</section>
+
+
+<!-- Station performance tables -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Station Data Benchmarks</h2>
+
+    <!-- ECMWF 11k -->
+    <h3 class="title is-4" style="margin-top: 1.5rem;">ECMWF 11k Station Data</h3>
+    <p class="content has-text-justified">
+      We evaluate ESFM_s on the 11,863 ECMWF station dataset (trained on samples between 2000 and 2020). The dataset is
+      unimputed and sparse: temperature occupancy ranges from ~0% to 99.3% across stations (median 66.1%),
+      while sea-level pressure has a median occupancy of only 29.1%. We hold out 1&thinsp;k stations
+      completely during training and test under three regimes: <b>regular evaluation</b> (trained station
+      locations in the test period), <b>holdout station I/O</b> (novel stations introduced at test time),
+      and <b>extrapolating holdout stations</b> (novel locations inferred from trained station observations
+      only, with no observations provided at the new coordinates).
+    </p>
+    <div class="table-container" style="overflow-x: auto;">
+      <table class="table is-striped is-hoverable" style="font-size: 0.82rem; white-space: nowrap;">
+        <thead>
+          <tr>
+            <th rowspan="2">Evaluation</th>
+            <th rowspan="2">Lead time</th>
+            <th colspan="2" style="text-align:center;">T</th>
+            <th colspan="2" style="text-align:center;">dT</th>
+            <th colspan="2" style="text-align:center;">U</th>
+            <th colspan="2" style="text-align:center;">V</th>
+            <th colspan="2" style="text-align:center;">MSL</th>
+            <th colspan="2" style="text-align:center;">WS</th>
+            <th colspan="2" style="text-align:center;">WD</th>
+          </tr>
+          <tr>
+            <th>MAE</th><th>PCC</th>
+            <th>MAE</th><th>PCC</th>
+            <th>MAE</th><th>PCC</th>
+            <th>MAE</th><th>PCC</th>
+            <th>MAE</th><th>PCC</th>
+            <th>MAE</th><th>PCC</th>
+            <th>MAE</th><th>PCC</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td rowspan="3"><b>Regular evaluation</b></td>
+            <td>6h</td>
+            <td>1.07</td><td>0.98</td><td>1.18</td><td>0.98</td><td>1.18</td><td>0.86</td>
+            <td>1.18</td><td>0.85</td><td>76.89</td><td>0.98</td>
+            <td>1.04</td><td>0.83</td><td>34.26</td><td>0.68</td>
+          </tr>
+          <tr>
+            <td>12h</td>
+            <td>1.24</td><td>0.98</td><td>1.38</td><td>0.97</td><td>1.32</td><td>0.82</td>
+            <td>1.32</td><td>0.82</td><td>126.63</td><td>0.97</td>
+            <td>1.13</td><td>0.80</td><td>36.68</td><td>0.65</td>
+          </tr>
+          <tr>
+            <td>24h</td>
+            <td>1.56</td><td>0.97</td><td>1.75</td><td>0.96</td><td>1.63</td><td>0.72</td>
+            <td>1.63</td><td>0.71</td><td>248.58</td><td>0.90</td>
+            <td>1.34</td><td>0.72</td><td>44.58</td><td>0.58</td>
+          </tr>
+          <tr>
+            <td rowspan="3"><b>Holdout station I/O</b></td>
+            <td>6h</td>
+            <td>1.87</td><td>0.97</td><td>1.63</td><td>0.97</td><td>1.77</td><td>0.75</td>
+            <td>1.76</td><td>0.72</td><td>148.75</td><td>0.96</td>
+            <td>1.57</td><td>0.68</td><td>47.85</td><td>0.54</td>
+          </tr>
+          <tr>
+            <td>12h</td>
+            <td>2.05</td><td>0.97</td><td>1.93</td><td>0.96</td><td>1.98</td><td>0.68</td>
+            <td>1.95</td><td>0.64</td><td>196.65</td><td>0.94</td>
+            <td>1.74</td><td>0.60</td><td>51.92</td><td>0.51</td>
+          </tr>
+          <tr>
+            <td>24h</td>
+            <td>2.20</td><td>0.96</td><td>2.21</td><td>0.95</td><td>2.18</td><td>0.59</td>
+            <td>2.16</td><td>0.53</td><td>308.78</td><td>0.85</td>
+            <td>1.83</td><td>0.53</td><td>57.48</td><td>0.46</td>
+          </tr>
+          <tr>
+            <td rowspan="3"><b>Extrapolating holdout stations</b></td>
+            <td>6h</td>
+            <td>2.32</td><td>0.94</td><td>2.37</td><td>0.92</td><td>2.02</td><td>0.64</td>
+            <td>1.97</td><td>0.61</td><td>177.09</td><td>0.92</td>
+            <td>1.81</td><td>0.55</td><td>53.69</td><td>0.43</td>
+          </tr>
+          <tr>
+            <td>12h</td>
+            <td>2.36</td><td>0.94</td><td>2.44</td><td>0.93</td><td>2.09</td><td>0.62</td>
+            <td>2.03</td><td>0.60</td><td>211.29</td><td>0.90</td>
+            <td>1.87</td><td>0.54</td><td>55.06</td><td>0.41</td>
+          </tr>
+          <tr>
+            <td>24h</td>
+            <td>2.50</td><td>0.94</td><td>2.64</td><td>0.92</td><td>2.28</td><td>0.54</td>
+            <td>2.20</td><td>0.52</td><td>302.12</td><td>0.85</td>
+            <td>1.96</td><td>0.48</td><td>60.12</td><td>0.36</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">
+      Forecast MAE (lower is better) and PCC (higher is better) for ESFM_s on ECMWF 11k
+      station variables: temperature (T), dew point (dT), eastward/northward wind (U/V), sea-level
+      pressure (MSL), wind speed (WS), wind direction&nbsp;(WD).
+    </p>
+
+    <!-- Weather-5K -->
+    <h3 class="title is-4" style="margin-top: 2.5rem;">Weather-5K Station Data</h3>
+    <p class="content has-text-justified">
+      Weather-5K is an imputed benchmark with ~5&thinsp;k globally distributed stations (training set covering
+      2014&ndash;2021). Baseline models receive 48&nbsp;h of temporal history and predict target lead
+      times directly without autoregressive rollouts. Despite using its default (t&minus;&Delta;t, t)
+      two-frame observation setup, ESFM_s remains competitive, especially at short lead times.
+    </p>
+    <div class="table-container">
+      <table class="table is-striped is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Lead time</th>
+            <th>Temperature</th>
+            <th>Dewpoint</th>
+            <th>Wind speed</th>
+            <th>Wind direction</th>
+            <th>Sea level pressure</th>
+            <th>Overall</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>ESFM_s</b></td><td>6h</td>
+            <td>1.10</td><td>1.17</td><td>1.06</td><td>36.44</td><td>0.62</td><td>8.1</td>
+          </tr>
+          <tr>
+            <td><b>ESFM_s</b></td><td>12h</td>
+            <td>1.32</td><td>1.45</td><td>1.16</td><td>39.32</td><td>1.23</td><td>8.9</td>
+          </tr>
+          <tr>
+            <td><b>ESFM_s</b></td><td>24h</td>
+            <td>1.76</td><td>1.86</td><td>1.40</td><td>46.29</td><td>2.55</td><td>10.8</td>
+          </tr>
+          <tr>
+            <td>Pyraformer</td><td>24h</td>
+            <td>1.75</td><td>1.83</td><td>1.30</td><td>61.8</td><td>1.90</td><td>13.7</td>
+          </tr>
+          <tr>
+            <td>iTransformer</td><td>24h</td>
+            <td>1.82</td><td>1.93</td><td>1.32</td><td>63.2</td><td>1.99</td><td>14.1</td>
+          </tr>
+          <tr>
+            <td>Informer</td><td>24h</td>
+            <td>1.88</td><td>1.94</td><td>1.30</td><td>60.7</td><td>2.01</td><td>13.6</td>
+          </tr>
+          <tr>
+            <td>Autoformer</td><td>24h</td>
+            <td>1.93</td><td>2.06</td><td>1.42</td><td>66.5</td><td>2.26</td><td>14.8</td>
+          </tr>
+          <tr>
+            <td>FEDformer</td><td>24h</td>
+            <td>1.98</td><td>2.02</td><td>1.36</td><td>66.0</td><td>2.13</td><td>14.5</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">
+      MAE on Weather-5K (lower is better). Wind speed and direction for ESFM_s are derived
+      from U and V components. Overall score is the average of the five variables.
+    </p>
+  </div>
+</section>
+
+
+<!-- Quickstart -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Quickstart</h2>
+    <div class="content">
+      <p>
+        ESFM runs inside a container environment (tested on
+        <code>physicsnemo:25.03</code> on CSCS Alps).
+        To get started, clone the repository and build the
+        <a href="https://github.com/swiss-ai/ESFM/blob/main/Dockerfile">Dockerfile</a>
+        to obtain a compatible runtime.
+      </p>
+      <pre><code class="language-bash">git clone https://github.com/swiss-ai/ESFM</code></pre>
+      <p>
+        <b>Interactive inference:</b> for a quick ERA5 visualisation using model weights from
+        <a href="https://huggingface.co/ESFM">Hugging Face</a> and a desired init condition from WeatherBench2, have a look at the notebook (we are working on providing a conda environment configuration for simple local inference):
+      </p>
+      <pre><code class="language-bash">notebooks/inference_ESFMs_on_ERA5.ipynb</code></pre>
+      <p>
+        <b>Script-based inference:</b> set your data path prefix, then run the inference entrypoint
+        with an experiment config:
+      </p>
+      <pre><code class="language-bash">export ESFM_DATA_PATH_PREFIX=/your/storage/root
+python inference_rollout.py \
+    --config ./configs/config_ESFM_s_nm.yaml \
+    --NUM_ROLLOUT_STEPS 56</code></pre>
+      <p>
+        See the <a href="https://github.com/swiss-ai/ESFM">repository README</a> for training
+        recipes, Slurm scripts, masking configurations, and instructions for plugging in your own
+        dataset (gridded, sparse, or station-based).
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<!-- Experiment scripts -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Reproducing Experiments</h2>
+    <div class="content">
+      <p>
+        Detailed instructions for reproducing the ESFM training and inference experiments from the
+        paper — including checkpoint notes, Slurm script usage, and environment setup — are available
+        in <a href="https://github.com/swiss-ai/ESFM/blob/main/scripts/README.md"><code>scripts/README.md</code></a>.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<!-- BibTeX -->
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@article{ozdemir2026esfm,
+  title   = {ESFM: A Unified Earth System Foundation Model for Heterogeneous Data Integration and Forecasting},
+  author  = {Ozdemir, Firat and Cheng, Yun and Mohebi, Salman and Lehmann, Fanny and
+             Adamov, Simon and Zhang, Zhenyi and Trentini, Leonardo and Grund, Dana and
+             Fuhrer, Oliver and Hoefler, Torsten and Mishra, Siddhartha and Schemm, Sebastian and
+             Soja, Benedikt and Salzmann, Mathieu},
+  journal = {arXiv preprint arXiv:submit/7499478},
+  year    = {2026}
+}</code></pre>
+  </div>
+</section>
+
+
+<!-- Acknowledgments -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop content">
+    <h2 class="title is-3">Acknowledgments</h2>
+    <p>
+      This work was supported under project IDs a01 and a122 as part of the Swiss AI Initiative, through a grant from the ETH Domain and computational resources provided by the Swiss National Supercomputing Centre (CSCS) under the Alps infrastructure. 
+      Contributions of F. Lehmann were primarily supported by the ETH AI Center through their ETH AI Center postdoctoral fellowship. 
+      Contributions of L. Trentini were supported by the Swiss National Science Foundation (SNSF) under grant number 225851.
+      The authors thank sincerely A. Zoller for running ensemble rollout forecasts of the compared SotA models and L. Huang for insightful discussions throughout the development of ESFM.
+    </p>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content has-text-centered">
+          <p>
+            Page template adapted from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>,
+            licensed under
+            <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+</body>
+</html>
