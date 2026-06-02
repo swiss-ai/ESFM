@@ -1,5 +1,9 @@
 # ESFM: Earth System Foundation Model
 
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-ESFM%20Webpage-0A7E8C?style=for-the-badge&logo=github&logoColor=white)](https://swiss-ai.github.io/ESFM/)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Model%20Weights-FFB000?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/ESFM)
+[![Preprocessing Scripts](https://img.shields.io/badge/Data%20Preprocessing-Preprocessing%20Scripts-2E7D32?style=for-the-badge&logo=github&logoColor=white)](https://github.com/swiss-ai/SwissClim_data_processing_scripts)
+
 This repository contains the ESFM training and evaluation code used for atmospheric and Earth-system forecasting experiments.
 
 The codebase is based on the Aurora model stack and extends it with ESFM-specific model components, data pipelines, and experiment scripts (both training and evaluation).
@@ -25,6 +29,7 @@ The codebase is based on the Aurora model stack and extends it with ESFM-specifi
   - [Project Scope](#project-scope)
   - [Repository Layout](#repository-layout)
   - [Requirements](#requirements)
+  - [GitHub Pages](#github-pages)
   - [Model Weights](#model-weights)
   - [Preprint](#preprint)
   - [Configuration System](#configuration-system)
@@ -78,6 +83,12 @@ Important environment assumption:
 
 All experiments have been tested on the Container Engine of CSCS Alps.  
 Most of our experiments have ran on an image based off of modulus:24.04, but later verified with physicsnemo:25.03.
+
+## GitHub Pages
+
+Project documentation website:
+
+- https://swiss-ai.github.io/ESFM/
 
 ## Model Weights
 
