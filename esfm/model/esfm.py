@@ -323,7 +323,7 @@ class ESFM(torch.nn.Module):
                 lead_time=timestep,
                 patch_res=patch_res,
                 rollout_step=batch.metadata.rollout_step,
-                is_global_observation=is_global_observation,
+                warped=is_global_observation,
             )
 
         # get all ensemble preds 

@@ -504,7 +504,6 @@ class Swin3DTransformerBlock(nn.Module):
         res: tuple[int, int, int],
         rollout_step: int,
         warped: bool = True,
-        is_global_observation: bool = True,
     ) -> torch.Tensor:
         """Run the block.
 
@@ -513,7 +512,10 @@ class Swin3DTransformerBlock(nn.Module):
             c (torch.Tensor): Conditioning context of shape `(B, D)`.
             res (tuple[int, int, int]): Resolution of the input `x`.
             rollout_step (int): Roll-out step.
-            warped (bool, optional): Connect the left and right sides. Defaults to `True`.
+            warped (bool, optional): If `True`, treat the left and right sides of the domain as
+                connected (antimeridian wrap-around) when computing the shifted-window attention
+                mask. Shifted-window attention itself is always performed regardless of this
+                flag. Defaults to `True`.
 
         Returns:
             torch.Tensor: Output tokens.
@@ -529,7 +531,7 @@ class Swin3DTransformerBlock(nn.Module):
         x = x.view(B, C, H, W, D)
 
         # Perform cyclic shift.
-        if not all(s == 0 for s in ss) and is_global_observation:
+        if not all(s == 0 for s in ss):
             shifted_x = torch.roll(x, shifts=(-ss[0], -ss[1], -ss[2]), dims=(1, 2, 3))
             attn_mask, _ = compute_3d_shifted_window_mask(
                 C, H, W, ws, ss, x.device, x.dtype, warped=warped
@@ -557,7 +559,7 @@ class Swin3DTransformerBlock(nn.Module):
         shifted_x = crop_3d(shifted_x, pad_size)
 
         # Reverse the cyclic shift.
-        if not all(s == 0 for s in ss) and is_global_observation:
+        if not all(s == 0 for s in ss):
             x = torch.roll(shifted_x, shifts=(ss[0], ss[1], ss[2]), dims=(1, 2, 3))
         else:
             x = shifted_x
@@ -774,7 +776,7 @@ class BasicLayer3D(nn.Module):
         res: tuple[int, int, int],
         crop: tuple[int, int, int] = (0, 0, 0),
         rollout_step: int = 0,
-        is_global_observation: bool = True,
+        warped: bool = True,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Run the basic layer.
 
@@ -784,12 +786,15 @@ class BasicLayer3D(nn.Module):
             res (tuple[int, int, int]): Resolution of the input `x`.
             crop (tuple[int, int, int]): Cropping for every dimension.
             rollout_step (int): Roll-out step.
+            warped (bool, optional): If `True`, treat the left and right sides of the domain as
+                connected (antimeridian wrap-around) in the shifted-window attention mask.
+                Defaults to `True`.
 
         Returns:
             torch.Tensor: Output tokens.
         """
         for blk in self.blocks:
-            x = blk(x, c, res, rollout_step, is_global_observation=is_global_observation)
+            x = blk(x, c, res, rollout_step, warped=warped)
         if self.downsample is not None:
             x_scaled = self.downsample(x, res)
             return x_scaled, x
@@ -960,7 +965,7 @@ class Swin3DTransformerBackbone(nn.Module):
         lead_time: timedelta,
         rollout_step: int,
         patch_res: tuple[int, int, int],
-        is_global_observation: bool = True,
+        warped: bool = True,
     ) -> torch.Tensor:
         """Run the backbone.
 
@@ -969,6 +974,9 @@ class Swin3DTransformerBackbone(nn.Module):
             lead_time (datetime.timedelta): Lead time.
             rollout_step (int): Roll-out step.
             patch_res (tuple[int, int, int]): Patch resolution of the form `(C, H, W)`.
+            warped (bool, optional): If `True`, treat the left and right sides of the domain as
+                connected (antimeridian wrap-around) in the shifted-window attention mask.
+                Defaults to `True`.
 
         Returns:
             torch.Tensor: Output tokens of shape `(B, L, D)`.
@@ -989,7 +997,7 @@ class Swin3DTransformerBackbone(nn.Module):
 
         skips = []
         for i, layer in enumerate(self.encoder_layers):
-            x, x_unscaled = layer(x, c, all_enc_res[i], rollout_step=rollout_step, is_global_observation=is_global_observation)
+            x, x_unscaled = layer(x, c, all_enc_res[i], rollout_step=rollout_step, warped=warped)
             skips.append(x_unscaled)
         for i, layer in enumerate(self.decoder_layers):
             index = self.num_decoder_layers - i - 1
@@ -999,7 +1007,7 @@ class Swin3DTransformerBackbone(nn.Module):
                 all_enc_res[index],
                 padded_outs[index - 1],
                 rollout_step=rollout_step,
-                is_global_observation=is_global_observation,
+                warped=warped,
             )
 
             if 0 < i < self.num_decoder_layers - 1:
