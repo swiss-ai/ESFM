@@ -355,6 +355,8 @@ def main():
     encoder_act_checkpointing = args.act_checkpointing_encoder
     backbone_act_checkpointing = args.act_checkpointing_backbone
     decoder_act_checkpointing = args.act_checkpointing_decoder
+    var_attn_chunk_size = args.var_attn_chunk_size if args.var_attn_chunk_size > 0 else None
+    level_decoder_chunk_size = args.level_decoder_chunk_size if args.level_decoder_chunk_size > 0 else None
     
     # Default model architecture
     str_architecture_size = args.str_architecture_size
@@ -397,6 +399,9 @@ def main():
         stabilise_level_agg=args.stabilise_level_agg,
         add_qk_norm_to_swin3d=args.add_qk_norm_to_swin3d,
         encoder_activation_checkpointing=encoder_act_checkpointing,  # Enable extensive checkpointing for large models
+        decoder_activation_checkpointing=decoder_act_checkpointing,  # Enable extensive checkpointing for large models
+        var_attn_chunk_size=var_attn_chunk_size,
+        level_decoder_chunk_size=level_decoder_chunk_size,
         absolute_time_embedding_in_minutes=args.absolute_time_embedding_in_minutes, # use absolute time embedding in minutes
         add_token_pos_embedding_in_decoder=args.add_token_pos_embedding_in_decoder, # add token positional embedding in the decoder
         num_max_ensembles=args.num_max_ensembles, # maximum number of ensembles
@@ -659,7 +664,7 @@ def main():
 
                 
             train_keys_replicated = {}
-            train_keys_replicated['loss_train'] = total_loss
+            train_keys_replicated['loss_train'] = total_loss.detach().item()
             for key in loss_dict: 
                 train_keys_replicated[f'train/{key}'] = loss_dict[key]
             loss_dict.update(train_keys_replicated)
@@ -710,7 +715,7 @@ def main():
 
             # Log metrics
             loss_dict = {f'{key}_val': value for key, value in loss_dict.items()}
-            loss_dict['loss_val'] = total_loss
+            loss_dict['loss_val'] = total_loss.detach().item()
             self.log_dict(loss_dict, batch_size=self.batch_size, sync_dist=True, prog_bar=True)
             
         def on_load_checkpoint(self, checkpoint: dict) -> None:
@@ -956,10 +961,8 @@ def main():
     if num_gpus > 1:
         if strategy_str == 'full_fsdp':
             # Define FSDPStrategy with Mixed Precision
-            if decoder_act_checkpointing:
-                activation_ckpt_policy = { Perceiver3DDecoder,}
-            else:
-                activation_ckpt_policy = None
+            ## activations for encoder, backbone, and decoder are explicitly wrapped in their internal calls to accommodate large ESFM training.
+            activation_ckpt_policy = None
             fsdp_strategy = FSDPStrategy(
                 activation_checkpointing_policy=activation_ckpt_policy,
                 cpu_offload=False,

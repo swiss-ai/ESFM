@@ -96,6 +96,9 @@ class ESFM(torch.nn.Module):
         disable_flashattention: bool = False,
         add_qk_norm_to_swin3d: bool = False,
         encoder_activation_checkpointing: bool = True,
+        decoder_activation_checkpointing: bool = True,
+        var_attn_chunk_size: int | None = None,
+        level_decoder_chunk_size: int | None = None,
         surf_vars_nan_to_zero: tuple[str, ...] = ("sst", "ci"), # NaN content within these vars will be replaced with zero
         absolute_time_embedding_in_minutes: bool = False,
         add_token_pos_embedding_in_decoder: bool = False,
@@ -167,6 +170,13 @@ class ESFM(torch.nn.Module):
             num_max_ensembles: int, maximum number of ensembles for embedding layer
             use_legacy_tails: bool, whether to use the legacy version of the decoder tails. This is only for ablation purposes and will be removed in the future.
             ensemble_adaln_scale_bias: float, scale bias for the adaptive layer normalisation in the decoder. Defaults to `1.0`.
+            var_attn_chunk_size: int | None, chunk size (along the flattened batch*grid, or
+                batch*levels*grid, dimension) used when activation-checkpointing the encoder's
+                variable-attention modules. Smaller values bound peak activation memory more
+                tightly at the cost of more (smaller, less efficient) sub-calls per checkpoint.
+                `None` disables chunking. Defaults to `0`.
+            level_decoder_chunk_size: int | None, same as `var_attn_chunk_size` but for the
+                decoder's `level_decoder` call. Defaults to `0`.
         """
         super().__init__()
         self.surf_vars = surf_vars
@@ -186,6 +196,7 @@ class ESFM(torch.nn.Module):
         else:
             self.patch_tokenizer_identifier = None
         self.encoder_activation_checkpointing = encoder_activation_checkpointing
+        self.decoder_activation_checkpointing = decoder_activation_checkpointing
         self.add_token_pos_embedding_in_decoder = add_token_pos_embedding_in_decoder
 
         if self.surf_stats:
@@ -218,6 +229,7 @@ class ESFM(torch.nn.Module):
             disable_flashattention=disable_flashattention,
             extensive_checkpointing=encoder_activation_checkpointing,
             absolute_time_embedding_in_minutes=absolute_time_embedding_in_minutes,
+            var_attn_chunk_size=var_attn_chunk_size,
         )
 
         self.backbone = Swin3DTransformerBackbone(
@@ -260,6 +272,8 @@ class ESFM(torch.nn.Module):
             add_token_pos_embedding=self.add_token_pos_embedding_in_decoder,
             num_max_ensembles=num_max_ensembles,
             adaln_scale_bias=ensemble_adaln_scale_bias,
+            extensive_checkpointing=decoder_activation_checkpointing,
+            level_decoder_chunk_size=level_decoder_chunk_size,
         )
 
     def forward(self, batch: Batch) -> Batch:
@@ -616,15 +630,7 @@ class ESFM(torch.nn.Module):
 
     def configure_activation_checkpointing(
         self,
-        module_names: tuple[str, ...] = (
-            "Basic3DDecoderLayer",
-            "Basic3DEncoderLayer",
-            "Perceiver3DDecoder",
-            "Perceiver3DEncoder",
-            "Perceiver3DEncoderWithVariableAggregation",
-            "Swin3DTransformerBackbone",
-            "Swin3DTransformerBlock",
-        ),
+        module_names: tuple[str, ...] | None = None,
     ) -> None:
         """Configure activation checkpointing.
 
@@ -640,22 +646,23 @@ class ESFM(torch.nn.Module):
         Function updated based off of https://github.com/microsoft/aurora/blob/4ccd1fa0cdb6d7e4909eefbba0e3c1aefca3b5a5/aurora/model/aurora.py#L506
         """
 
+        if module_names is None:
+            module_names = (
+                "Basic3DDecoderLayer",
+                "Basic3DEncoderLayer",
+                "Perceiver3DDecoder",
+                "Swin3DTransformerBackbone",
+                "Swin3DTransformerBlock",
+            )
+            if not self.variable_aggregation:
+                module_names = module_names + ("Perceiver3DEncoder",)
+
         found: set[str] = set()
         requested = set(module_names)
-        encoder_alternatives = {
-            "Perceiver3DEncoder",
-            "Perceiver3DEncoderWithVariableAggregation",
-        }
-
-        # If one Perceiver encoder variant is requested, also match the other variant so
-        # checkpointing remains robust across model configurations.
-        names_to_match = set(module_names)
-        if names_to_match & encoder_alternatives:
-            names_to_match.update(encoder_alternatives)
 
         def check(x: torch.nn.Module) -> bool:
             name = x.__class__.__name__
-            if name in names_to_match:
+            if name in requested:
                 found.add(name)
                 return True
             else:
@@ -664,9 +671,6 @@ class ESFM(torch.nn.Module):
         apply_activation_checkpointing(self, check_fn=check)
 
         missing = requested - found
-        if missing & encoder_alternatives and found & encoder_alternatives:
-            missing -= encoder_alternatives
-
         if missing:
             raise RuntimeError(
                 f'Could not checkpoint on the following modules: '

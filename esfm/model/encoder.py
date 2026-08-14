@@ -459,6 +459,7 @@ class Perceiver3DEncoderWithVariableAggregation(nn.Module):
         patch_tokenizer_identifier = None,
         extensive_checkpointing: bool = True,
         absolute_time_embedding_in_minutes: bool = False,
+        var_attn_chunk_size: int | None = None,
         *args, **kwargs
     ):
         super().__init__()
@@ -469,6 +470,7 @@ class Perceiver3DEncoderWithVariableAggregation(nn.Module):
         self.disable_flashattention = kwargs.get('disable_flashattention', False)
         self.extensive_checkpointing = extensive_checkpointing
         self.absolute_time_embedding_in_minutes = absolute_time_embedding_in_minutes
+        self.var_attn_chunk_size = var_attn_chunk_size
         
         # We treat the static variables as surface variables in the model.
         surf_vars = surf_vars + static_vars if static_vars is not None else surf_vars
@@ -632,6 +634,17 @@ class Perceiver3DEncoderWithVariableAggregation(nn.Module):
         x = torch.einsum("blvd->bvld", x)  # (B, V, L, D)
         return x
 
+    def _checkpointed_var_attn(self, module: torch.nn.Module, x: torch.Tensor) -> torch.Tensor:
+        n = x.size(0)
+        chunk_size = self.var_attn_chunk_size
+        if chunk_size is not None and n > chunk_size:
+            out_chunks = [
+                checkpoint(module, x[i:i + chunk_size], use_reentrant=False)
+                for i in range(0, n, chunk_size)
+            ]
+            return torch.cat(out_chunks, dim=0)
+        return checkpoint(module, x, use_reentrant=False)
+
     def process_surf(self, x_surf, surf_vars, dtype, grid_resolution_str=None):
         # Patch embed the surface level.
         x_surf = rearrange(x_surf, "b t v h w -> b v t h w")
@@ -653,7 +666,7 @@ class Perceiver3DEncoderWithVariableAggregation(nn.Module):
             if self.axial_attention:
                 x_surf = rearrange(x_surf, "b v l d -> (b l) v d", b=b)
                 if self.extensive_checkpointing:
-                    x_surf = checkpoint(self.surf_var_attn, x_surf) # ( (B, L), V, D)
+                    x_surf = self._checkpointed_var_attn(self.surf_var_attn, x_surf) # ( (B, L), V, D)
                 else:
                     x_surf = self.surf_var_attn(x_surf)
                 x_surf = rearrange(x_surf, '(b l) v d -> b v l d', b=b)
@@ -691,9 +704,11 @@ class Perceiver3DEncoderWithVariableAggregation(nn.Module):
             # x_atmos = rearrange(x_atmos, 'B V L D -> (B L) V D')
             if self.axial_attention:
                 x_atmos = rearrange(x_atmos, "(b c) v l d -> (b c l) v d", b=B, c=C)
-                x_atmos = self.atmos_var_attn(x_atmos) # ( (B, C, L), V, D)
-                # x_atmos = checkpoint(self.aggregate_atmos_vars, x_atmos)
-                x_atmos = rearrange(x_atmos, '(B C L) V D -> (B C) V L D', B=B, C=C) 
+                if self.extensive_checkpointing:
+                    x_atmos = self._checkpointed_var_attn(self.atmos_var_attn, x_atmos) # ( (B, C, L), V, D)
+                else:
+                    x_atmos = self.atmos_var_attn(x_atmos) # ( (B, C, L), V, D)
+                x_atmos = rearrange(x_atmos, '(B C L) V D -> (B C) V L D', B=B, C=C)
             x_atmos = self.aggregate_vars(x_atmos, self.atmos_latents_vars, self.atmos_vars_agg) # shape: ( (B C), V=1, L, D)
             
             x_atmos = rearrange(x_atmos, '(B C) 1 L D -> B C L D', C=C)
@@ -750,12 +765,8 @@ class Perceiver3DEncoderWithVariableAggregation(nn.Module):
         assert lat.shape[0] == H and lon.shape[-1] == W
 
         # embed surface variables & embed and aggregate atmos variables
-        if self.extensive_checkpointing:
-            x_surf = checkpoint(self.process_surf, x_surf, surf_vars, dtype, grid_resolution_str) # (B, C=1, L, D)
-            x_atmos = checkpoint(self.process_atmos, x_atmos, atmos_vars, B, C, dtype, grid_resolution_str)
-        else:
-            x_surf = self.process_surf(x_surf, surf_vars, dtype, grid_resolution_str) # (B, C=1, L, D)
-            x_atmos = self.process_atmos(x_atmos, atmos_vars, B, C, dtype, grid_resolution_str) # (B, C_A, L, D)
+        x_surf = self.process_surf(x_surf, surf_vars, dtype, grid_resolution_str) # (B, C=1, L, D)
+        x_atmos = self.process_atmos(x_atmos, atmos_vars, B, C, dtype, grid_resolution_str) # (B, C_A, L, D)
             
             
         # # Add atmospheric pressure encoding of shape (C_A, D) and subsequent embedding.
