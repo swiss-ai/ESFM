@@ -9,6 +9,7 @@ from datetime import timedelta
 import torch
 from einops import rearrange
 from torch import nn
+from torch.utils.checkpoint import checkpoint
 
 from esfm.batch import Batch, Metadata
 from esfm.model.fourier import levels_expansion
@@ -75,7 +76,9 @@ class Perceiver3DDecoder(nn.Module):
         disable_flashattention: bool = False,
         add_token_pos_embedding: bool = False,
         num_max_ensembles: int = 1000,
-        adaln_scale_bias: float = 1.0
+        adaln_scale_bias: float = 1.0,
+        extensive_checkpointing: bool = True,
+        level_decoder_chunk_size: int | None = None,
     ) -> None:
         """Initialise.
 
@@ -98,6 +101,11 @@ class Perceiver3DDecoder(nn.Module):
             add_token_pos_embedding: Whether to add token positional embeddings. Defaults to `False`.
             num_max_ensembles: Maximum number of ensembles for embedding layer. Defaults to `1000`.
             adaln_scale_bias: Scale bias for the adaptive layer normalisation. Defaults to `1.0`.
+            level_decoder_chunk_size: Maximum number of flattened `(B * L)` items passed to
+                `level_decoder` in a single call. Larger grids are split into chunks along this
+                batch dimension (each item is processed independently, so this is exact, not an
+                approximation) to bound peak activation memory. `None` disables chunking.
+                Defaults to None.
         """
         super().__init__()
 
@@ -109,6 +117,8 @@ class Perceiver3DDecoder(nn.Module):
         self.patch_tokenizer_identifier = patch_tokenizer_identifier
         self.add_token_pos_embedding = add_token_pos_embedding
         self.num_max_ensembles = num_max_ensembles
+        self.extensive_checkpointing = extensive_checkpointing
+        self.level_decoder_chunk_size = level_decoder_chunk_size
         if self.add_token_pos_embedding:
             self.cache_pos_embeddings = {} ## cache for pos embeddings for different grid sizes
 
@@ -204,7 +214,25 @@ class Perceiver3DDecoder(nn.Module):
         assert len(level_embed.shape) == 3, f"Expected 3 dims, found {level_embed.dims()}."
         assert x.dim() == 3, f"Expected 3 dims, found {x.dim()}."
 
-        x = self.level_decoder(level_embed, x)  # (BxL, C, D)
+        n = level_embed.size(0)
+        chunk_size = self.level_decoder_chunk_size
+        if self.extensive_checkpointing:
+            if chunk_size is not None and n > chunk_size:
+                out_chunks = []
+                for i in range(0, n, chunk_size):
+                    out_chunks.append(
+                        checkpoint(
+                            self.level_decoder,
+                            level_embed[i:i + chunk_size],
+                            x[i:i + chunk_size],
+                            use_reentrant=False,
+                        )
+                    )
+                x = torch.cat(out_chunks, dim=0)  # (BxL, C, D)
+            else:
+                x = checkpoint(self.level_decoder, level_embed, x, use_reentrant=False)  # (BxL, C, D)
+        else:
+            x = self.level_decoder(level_embed, x)  # (BxL, C, D)
         x = x.reshape(B, L, C, D)
         return x
 

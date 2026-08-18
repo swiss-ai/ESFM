@@ -186,6 +186,23 @@ def get_parser():
         default=True,
         help="Enable activation checkpointing for decoder. [default: True]",
     )
+    parser.add_argument(
+        "--var_attn_chunk_size",
+        type=int,
+        default=0,
+        help="Chunk size (along the flattened batch*grid or batch*levels*grid dimension) for "
+             "the encoder's checkpointed variable-attention modules. Larger values mean fewer, "
+             "bigger sub-calls per checkpoint (faster, more GPU memory) at a lower value "
+             "meaning smaller peak activation memory (safer, slower). Pass 0 to disable "
+             "chunking entirely. [default: 0]",
+    )
+    parser.add_argument(
+        "--level_decoder_chunk_size",
+        type=int,
+        default=0,
+        help="Same as --var_attn_chunk_size but for the decoder's level_decoder call. "
+             "[default: 0]",
+    )
     parser.add_argument("--wnb_entity", type=str, default="esfm", help="W&B entity name")
     parser.add_argument("--wnb_project", type=str, default="esfm_era5", help="W&B project name")
     parser.add_argument("--wnb_name", type=str, default="", help="W&B run name")
