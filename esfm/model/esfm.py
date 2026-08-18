@@ -174,9 +174,9 @@ class ESFM(torch.nn.Module):
                 batch*levels*grid, dimension) used when activation-checkpointing the encoder's
                 variable-attention modules. Smaller values bound peak activation memory more
                 tightly at the cost of more (smaller, less efficient) sub-calls per checkpoint.
-                `None` disables chunking. Defaults to `0`.
+                `None` disables chunking. Defaults to `None`.
             level_decoder_chunk_size: int | None, same as `var_attn_chunk_size` but for the
-                decoder's `level_decoder` call. Defaults to `0`.
+                decoder's `level_decoder` call. Defaults to `None`.
         """
         super().__init__()
         self.surf_vars = surf_vars
