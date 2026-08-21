@@ -22,7 +22,6 @@ from lightning.pytorch.strategies import FSDPStrategy, DDPStrategy
 from huggingface_hub import hf_hub_download
 
 from esfm import ESFM, Batch, Metadata
-from esfm.model.decoder_esfm import Perceiver3DDecoder
 
 ## import custom modules
 import yaml
@@ -631,7 +630,7 @@ def main():
 
             batch_obj_x, batch_obj_y = batch
             del batch
-            
+
             dataset_name = batch_obj_x.metadata.dataset_name
             latitude_weight_enabled = None
             if dataset_name in ['station_npz'] or dataset_name.startswith("weather5k") or dataset_name.startswith('station'): # explicitly disabled latitude weighting loss for station data
@@ -747,7 +746,7 @@ def main():
                             break
                 if nan_or_inf_found:
                     raise ValueError("NaN or Inf detected in gradients. Stopping training.")
-                
+
             super().on_after_backward()  # Call the parent method to ensure any additional behavior is executed
         
         def optimizer_step(

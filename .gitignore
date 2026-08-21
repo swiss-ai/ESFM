@@ -29,3 +29,7 @@ htmlcov
 .DS_Store
 *.swp
 .envrc
+lightning_logs
+logs/
+*.pkl
+.worktrees/

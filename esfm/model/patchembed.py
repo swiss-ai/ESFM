@@ -186,11 +186,12 @@ class VariablePatchEmbed(LevelPatchEmbed):
 
             # Create a mask for NaNs using the sliced weight shape
             nan_mask = F.conv3d(
-                x2, 
-                torch.ones(1, *weight.shape[1:], device=x2.device), 
+                x2,
+                torch.ones(1, *weight.shape[1:], device=x2.device),
                 stride=stride
             ).isnan()
-            prj = F.conv3d(x2, weight, bias, stride=stride)
+            x2_safe = torch.nan_to_num(x2, nan=0.0)
+            prj = F.conv3d(x2_safe, weight, bias, stride=stride)
             # Replace NaNs in the output with the learnable token
             prj = torch.where(
                 nan_mask, 

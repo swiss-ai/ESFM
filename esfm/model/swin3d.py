@@ -536,7 +536,7 @@ class Swin3DTransformerBlock(nn.Module):
             attn_mask, _ = compute_3d_shifted_window_mask(
                 int(C), int(H), int(W),
                 tuple(int(v) for v in ws), tuple(int(v) for v in ss),
-                x.device, x.dtype, warped=warped,
+                x.device, x.dtype, warped=bool(warped),
             )
         else:
             shifted_x = x
