@@ -39,9 +39,11 @@ custom_parser.add_argument(
     default=False,
     help="Use the validation set timestamps defined in the dataset config (val_time_start/val_time_end for ERA5-type datasets, start_val/end_val for others) instead of the fixed 2023/2024 test set. [default: False]",
 )
+custom_parser.add_argument('--use_inds_subset', action=argparse.BooleanOptionalAction, default=False)
 custom_args, remaining = custom_parser.parse_known_args()
 save_only_masked_predictions_during_testing = custom_args.save_only_masked_predictions_during_testing
 use_val_set_from_config = custom_args.use_val_set_from_config
+use_inds_subset = custom_args.use_inds_subset
 
 # Reconstruct sys.argv without custom arguments for the main parser.
 sys.argv = [sys.argv[0]] + remaining
@@ -73,7 +75,6 @@ start_end_time_intervals = [
     (datetime(2024, 7, 2, 0, 0, 0), datetime(2024, 7, 8, 23, 0, 0)),
     (datetime(2024, 10, 2, 0, 0, 0), datetime(2024, 10, 8, 23, 0, 0)),
 ]
-use_inds_subset = False
 if use_val_set_from_config:
     tmp_pred_fname = "tmp_predictions_val_set_subset" if use_inds_subset else "tmp_predictions_val_set"
     inds = []  # populated per-dataset inside load_data from val_time_start/val_time_end

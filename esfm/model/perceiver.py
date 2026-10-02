@@ -221,6 +221,7 @@ class PerceiverResampler(nn.Module):
         ln_eps: float = 1e-5,
         ln_k_q: bool = False,
         disable_flashattention: bool = False,
+        attn_drop_rate: float = 0.1,
     ) -> None:
         """Initialise.
 
@@ -233,6 +234,8 @@ class PerceiverResampler(nn.Module):
             mlp_ratio (float, optional): Rimensionality of the hidden layer divided by that of the
                 input for all MLPs. Defaults to `4.0`.
             drop (float, optional): Drop-out rate. Defaults to no drop-out.
+            attn_drop_rate (float, optional): Attention probability dropout, separate from
+                MLP dropout (`drop`). Defaults to `0.1`.
             residual_latent (bool, optional): Use residual attention w.r.t. the latent features.
                 Defaults to `True`.
             ln_eps (float, optional): Epsilon in the layer normalisation layers. Defaults to
@@ -241,6 +244,9 @@ class PerceiverResampler(nn.Module):
                 resampling layer. Defaults to `False`.
         """
         super().__init__()
+
+        if not 0.0 <= attn_drop_rate < 1.0:
+            raise ValueError("attn_drop_rate must be in [0, 1).")
 
         self.residual_latent = residual_latent
         self.layers = nn.ModuleList([])
@@ -255,6 +261,7 @@ class PerceiverResampler(nn.Module):
                             head_dim=head_dim,
                             num_heads=num_heads,
                             ln_k_q=ln_k_q if i == 0 else False,
+                            attn_drop_rate=attn_drop_rate,
                             disable_flashattention=disable_flashattention,
                         ),
                         MLP(dim=latent_dim, hidden_features=mlp_hidden_dim, dropout=drop),

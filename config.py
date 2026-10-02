@@ -275,6 +275,12 @@ def get_parser():
         help="Enable multi-(de-)tokenizers [default: False]",
     )
     parser.add_argument(
+        "--token_aggregation_attn_drop_rate",
+        type=float,
+        default=0.1,
+        help="Attention dropout for token aggregation modules in the encoder. [default: 0.1]",
+    )
+    parser.add_argument(
         "--variable_aggregation",
         action=argparse.BooleanOptionalAction,
         default=False,
