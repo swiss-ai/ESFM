@@ -72,6 +72,7 @@ class Perceiver3DDecoder(nn.Module):
         patch_tokenizer_identifier=None, 
         disable_flashattention: bool = False,
         add_token_pos_embedding: bool = False,
+        token_deaggregation_attn_drop_rate: float = 0.1,
         **kwargs
     ) -> None:
         """Initialise.
@@ -90,6 +91,8 @@ class Perceiver3DDecoder(nn.Module):
             mlp_ratio (float, optional): Ratio of MLP hidden dimension to embedding dimensionality.
                 Defaults to `4.0`.
             drop_rate (float, optional): Drop-out rate for input patches. Defaults to `0.0`.
+            token_deaggregation_attn_drop_rate (float, optional): Attention probability dropout
+                for pressure-level deaggregation, separate from MLP dropout. Defaults to `0.1`.
             perceiver_ln_eps (float, optional): Layer norm. epsilon for the Perceiver blocks.
                 Defaults to `1e-5`.
             add_token_pos_embedding: Whether to add token positional embeddings. Defaults to `False`.
@@ -114,6 +117,7 @@ class Perceiver3DDecoder(nn.Module):
             num_heads=num_heads,
             mlp_ratio=mlp_ratio,
             drop=drop_rate,
+            attn_drop_rate=token_deaggregation_attn_drop_rate,
             residual_latent=True,
             ln_eps=perceiver_ln_eps,
             disable_flashattention=disable_flashattention,

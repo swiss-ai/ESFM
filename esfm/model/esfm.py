@@ -106,6 +106,7 @@ class ESFM(torch.nn.Module):
         use_legacy_tails: bool = False,
         ensemble_adaln_scale_bias: float = 1.0,
         token_aggregation_attn_drop_rate: float = 0.1,
+        token_deaggregation_attn_drop_rate: float = 0.1,
     ) -> None:
         """Construct an instance of the model.
 
@@ -138,6 +139,8 @@ class ESFM(torch.nn.Module):
             drop_rate (float, optional): Drop-out rate.
             token_aggregation_attn_drop_rate (float, optional): Attention dropout for encoder
                 variable and pressure-level aggregation. Defaults to `0.1`.
+            token_deaggregation_attn_drop_rate (float, optional): Attention dropout for decoder
+                pressure-level deaggregation. Defaults to `0.1`.
             drop_path (float, optional): Drop-path rate.
             enc_depth (int, optional): Number of Perceiver blocks in the encoder.
             dec_depth (int, optioanl): Number of Perceiver blocks in the decoder.
@@ -267,6 +270,7 @@ class ESFM(torch.nn.Module):
             head_dim=embed_dim * 2 // num_heads,
             num_heads=num_heads,
             depth=dec_depth,
+            token_deaggregation_attn_drop_rate=token_deaggregation_attn_drop_rate,
             # Because of the concatenation, high ratios are expensive.
             # We use a lower ratio here to keep the memory in check.
             mlp_ratio=dec_mlp_ratio,

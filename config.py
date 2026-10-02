@@ -281,6 +281,13 @@ def get_parser():
         help="Attention dropout for token aggregation modules in the encoder. [default: 0.1]",
     )
     parser.add_argument(
+        "--token_deaggregation_attn_drop_rate",
+        type=float,
+        default=0.1,
+        help="Attention dropout for decoder pressure-level deaggregation Perceivers. "
+             "Does not change encoder, self-attention, or MLP dropout. [default: 0.1]",
+    )
+    parser.add_argument(
         "--variable_aggregation",
         action=argparse.BooleanOptionalAction,
         default=False,
