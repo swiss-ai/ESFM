@@ -575,8 +575,8 @@ station_npz_11kvar9:
   batch_size: 14
   train_time_start: "2000-01-01T00:00:00.000000"
   train_time_end: "2020-12-31T23:59:59.999999"
-  val_time_start: '2021-01-01T00:00:00'
-  val_time_end: '2021-12-30T23:00:00'
+  val_time_start: "2023-01-01T00:00:00.000000"
+  val_time_end: "2023-12-31T23:59:59.999999"
   conf:
     name: station_ecmwf11k
     path: swissai/a122/ESFM_ExtraDataset/stations_11k_var9/stations_11k_training_data.npy

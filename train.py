@@ -390,6 +390,8 @@ def main():
         decoder_num_heads=decoder_num_heads,
         embed_dim=embed_dim,
         num_heads=num_heads,
+        token_aggregation_attn_drop_rate=args.token_aggregation_attn_drop_rate,
+        token_deaggregation_attn_drop_rate=args.token_deaggregation_attn_drop_rate,
         drop_path=0.2,
         num_ensemble = args.num_ensemble,  # Number of ensemble members
         variable_aggregation= args.variable_aggregation,

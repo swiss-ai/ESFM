@@ -93,6 +93,7 @@ class ESFMEncoder(torch.nn.Module):
         use_resolution_specific_patch_tokenizers: bool = False,
         disable_flashattention: bool = False,
         add_qk_norm_to_swin3d: bool = False,
+        token_aggregation_attn_drop_rate: float = 0.1,
     ) -> None:
         """Construct an instance of the model.
 
@@ -123,6 +124,8 @@ class ESFMEncoder(torch.nn.Module):
                 `embed_dim` divided by this value.
             mlp_ratio (float, optional): Hidden dim. to embedding dim. ratio for MLPs.
             drop_rate (float, optional): Drop-out rate.
+            token_aggregation_attn_drop_rate (float, optional): Attention dropout for encoder
+                variable and pressure-level aggregation. Defaults to `0.1`.
             drop_path (float, optional): Drop-path rate.
             enc_depth (int, optional): Number of Perceiver blocks in the encoder.
             dec_depth (int, optioanl): Number of Perceiver blocks in the decoder.
@@ -190,6 +193,7 @@ class ESFMEncoder(torch.nn.Module):
             embed_dim=embed_dim,
             num_heads=num_heads,
             drop_rate=drop_rate,
+            token_aggregation_attn_drop_rate=token_aggregation_attn_drop_rate,
             mlp_ratio=mlp_ratio,
             head_dim=head_dim,
             depth=enc_depth,
@@ -397,4 +401,3 @@ class ESFMEncoder(torch.nn.Module):
         This is required in order to compute gradients without running out of memory.
         """
         apply_activation_checkpointing(self, check_fn=lambda x: isinstance(x, BasicLayer3D))
-

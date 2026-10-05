@@ -111,6 +111,7 @@ class Perceiver3DEncoder(nn.Module):
         perceiver_ln_eps: float = 1e-5,
         stabilise_level_agg: bool = False,
         patch_tokenizer_identifier = None,
+        token_aggregation_attn_drop_rate: float = 0.1,
         **kwargs,
     ) -> None:
         """Initialise.
@@ -128,6 +129,8 @@ class Perceiver3DEncoder(nn.Module):
             head_dim (int, optional): Dimension of attention heads used in aggregation blocks.
                 Defaults to `64`.
             drop_rate (float, optional): Drop out rate for input patches. Defaults to `0.1`.
+            token_aggregation_attn_drop_rate (float, optional): Attention probability dropout
+                for pressure-level aggregation. Defaults to `0.1`.
             depth (int, optional): Number of Perceiver cross-attention and feed-forward blocks.
                 Defaults to `2`.
             mlp_ratio (float, optional): Ratio of hidden dimensionality to embedding dimensionality
@@ -211,6 +214,7 @@ class Perceiver3DEncoder(nn.Module):
             head_dim=head_dim,
             num_heads=num_heads,
             drop=drop_rate,
+            attn_drop_rate=token_aggregation_attn_drop_rate,
             mlp_ratio=mlp_ratio,
             ln_eps=perceiver_ln_eps,
             ln_k_q=stabilise_level_agg,
@@ -460,6 +464,7 @@ class Perceiver3DEncoderWithVariableAggregation(nn.Module):
         extensive_checkpointing: bool = True,
         absolute_time_embedding_in_minutes: bool = False,
         var_attn_chunk_size: int | None = None,
+        token_aggregation_attn_drop_rate: float = 0.1,
         *args, **kwargs
     ):
         super().__init__()
@@ -577,6 +582,7 @@ class Perceiver3DEncoderWithVariableAggregation(nn.Module):
             head_dim=head_dim,
             num_heads=num_heads,
             drop=drop_rate,
+            attn_drop_rate=token_aggregation_attn_drop_rate,
             mlp_ratio=mlp_ratio,
             ln_eps=perceiver_ln_eps,
             ln_k_q=stabilise_level_agg,
@@ -589,6 +595,7 @@ class Perceiver3DEncoderWithVariableAggregation(nn.Module):
             head_dim=head_dim,
             num_heads=num_heads,
             drop=drop_rate,
+            attn_drop_rate=token_aggregation_attn_drop_rate,
             mlp_ratio=mlp_ratio,
             ln_eps=perceiver_ln_eps,
             ln_k_q=stabilise_level_agg,
@@ -602,6 +609,7 @@ class Perceiver3DEncoderWithVariableAggregation(nn.Module):
             head_dim=head_dim,
             num_heads=num_heads,
             drop=drop_rate,
+            attn_drop_rate=token_aggregation_attn_drop_rate,
             mlp_ratio=mlp_ratio,
             ln_eps=perceiver_ln_eps,
             ln_k_q=stabilise_level_agg,
