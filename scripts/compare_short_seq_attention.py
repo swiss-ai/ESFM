@@ -73,6 +73,8 @@ def build_model(surf_vars, atmos_vars, static_vars):
         fix_qk_norm_in_swin3d=args.fix_qk_norm_in_swin3d,
         encoder_activation_checkpointing=args.act_checkpointing_encoder,
         decoder_activation_checkpointing=args.act_checkpointing_decoder,
+        var_attn_chunk_size=args.var_attn_chunk_size if args.var_attn_chunk_size > 0 else None,
+        level_decoder_chunk_size=args.level_decoder_chunk_size if args.level_decoder_chunk_size > 0 else None,
         absolute_time_embedding_in_minutes=args.absolute_time_embedding_in_minutes,
         add_token_pos_embedding_in_decoder=args.add_token_pos_embedding_in_decoder,
         num_max_ensembles=args.num_max_ensembles,

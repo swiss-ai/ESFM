@@ -48,6 +48,13 @@ class ShortSequenceAttentionTest(unittest.TestCase):
         q, k, v = qkv(lq=1, lk=9)
         self.assertEqual(short_sequence_attention(q, k, v, 0.0, False).shape, (64, 1, 4, 32))
 
+    def test_row_chunks_match_single_call(self):
+        q, k, v = (t.detach() for t in qkv(b=100))
+        whole = short_sequence_attention(q, k, v, 0.0, False)
+        with mock.patch.object(perceiver, "_SHORT_SEQUENCE_CHUNK_ROWS", 7):
+            chunked = short_sequence_attention(q, k, v, 0.0, False)
+        torch.testing.assert_close(chunked, whole)
+
     def test_dropout_only_in_training(self):
         q, k, v = qkv()
         no_drop = short_sequence_attention(q, k, v, 0.0, False)

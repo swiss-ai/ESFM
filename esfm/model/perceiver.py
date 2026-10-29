@@ -84,6 +84,9 @@ _SDPA_FP32_BATCH_LIMIT = 40_000
 # attention's 128-wide tiles are almost all padding at these lengths and it needs the 40k-row slices
 # above; the explicit form is 2.5-5x faster per call at 0.25 deg.
 SHORT_SEQUENCE_MAX = 32
+# Rows per explicit attention call: bounds the fp32 copies of q/k (the large model's atmospheric
+# variable aggregation, 842k rows x 5 variables x 512 channels, is 8.6 GiB in fp32).
+_SHORT_SEQUENCE_CHUNK_ROWS = 65_536
 
 
 def short_sequence_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, dropout_p: float,
@@ -93,6 +96,7 @@ def short_sequence_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, 
     The logits are computed with autocast disabled: under autocast einsum runs in bf16 even on fp32
     inputs, and trained level aggregators reach |logits| ~ 1e5 (ESFM_s_nm_ft), where a bf16 step is
     512 and the near-argmax softmax picks different keys than flash attention (fp32 accumulators).
+    Rows are processed in chunks of `_SHORT_SEQUENCE_CHUNK_ROWS` to bound the fp32 q/k copies.
 
     Args:
         q (torch.Tensor): Queries of shape `(b, lq, h, d)`.
@@ -104,6 +108,15 @@ def short_sequence_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, 
     Returns:
         torch.Tensor: Output of shape `(b, lq, h, d)` in `v`'s dtype.
     """
+    return torch.cat([
+        _short_sequence_attention_chunk(qc, kc, vc, dropout_p, training)
+        for qc, kc, vc in zip(*(t.split(_SHORT_SEQUENCE_CHUNK_ROWS) for t in (q, k, v)))
+    ])
+
+
+def _short_sequence_attention_chunk(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, dropout_p: float,
+                                    training: bool) -> torch.Tensor:
+    """`short_sequence_attention` on one chunk of rows."""
     with torch.autocast(device_type=q.device.type, enabled=False):
         logits = torch.einsum("blhd,bmhd->bhlm", q.float(), k.float())
     probs = (logits * q.shape[-1] ** -0.5).softmax(-1)
