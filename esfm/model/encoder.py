@@ -24,6 +24,7 @@ from esfm.model.fourier import (
     absolute_time_expansion_minutes,
 )
 from esfm.model.patchembed import LevelPatchEmbed, VariablePatchEmbed
+from esfm.model import perceiver
 from esfm.model.perceiver import MLP, PerceiverResampler
 from esfm.model.posencoding import pos_scale_enc
 from esfm.model.util import (
@@ -396,8 +397,25 @@ class AxialAttention(nn.Module):
     def forward(self, x, kv = None):
         '''Expects input of shape: b=(batch_size x [Pressure_levels] x seq_len=tokens), l=#variables, h=#embed_dim'''
         kv = x if kv is None else kv
-        q, k, v = (self.q_proj(x), self.k_proj(kv), self.v_proj(kv))
         attn_dropout = self.attn_drop if self.training else 0.0
+        if torch.is_autocast_enabled() and max(x.shape[1], kv.shape[1]) <= perceiver.SHORT_SEQUENCE_MAX:
+            # Short sequences (the variables of one token): explicit attention, no q/k/v packing
+            # or 40k-row slicing. Cast the input to bf16 once rather than once per projection
+            # (same rounding as autocast); the residual below keeps the original x.
+            # Note: intermediate fix for the time being, might remove rest of the block later. 
+            x_bf16 = x.to(torch.bfloat16)
+            kv_bf16 = x_bf16 if kv is x else kv.to(torch.bfloat16)
+            q, k, v = (self.q_proj(x_bf16), self.k_proj(kv_bf16), self.v_proj(kv_bf16))
+            b, l, hidden_dim = q.shape
+            q = q.view(b, l, self.num_heads, self.head_dim)
+            k = k.view(b, kv.shape[1], self.num_heads, self.head_dim)
+            v = v.view(b, kv.shape[1], self.num_heads, self.head_dim)
+            attn_output = perceiver.short_sequence_attention(q, k, v, attn_dropout, self.training)
+            attn_output = attn_output.reshape(b, l, hidden_dim)
+            attn_output = self.ln1(x + attn_output)  # residual, post-norm
+            output = attn_output + self.dropout(self.out_proj(attn_output))
+            return self.ln2(output)
+        q, k, v = (self.q_proj(x), self.k_proj(kv), self.v_proj(kv))
 
         b, l, hidden_dim = q.shape
         # h = self.num_heads

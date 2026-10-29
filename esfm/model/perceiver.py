@@ -68,6 +68,61 @@ from einops import rearrange
 
 __all__ = ["MLP", "PerceiverResampler"]
 
+# flash_attn only has CUDA kernels: half-precision inputs on other devices use SDPA.
+_FLASH_ATTN_DEVICE_TYPES = ("cuda",)
+# Batch slicing for the attention kernels. flash_attn needs slices below ~40k rows ("invalid
+# configuration argument"). In SDPA, the built-in FlashAttention backend -- which SDPA picks for
+# fp16/bf16 -- crashed in backward on GH200 (torch 2.6 container) with 40k-row slices at decoder
+# shapes; its memory-efficient and math backends were fine, and fp32 (which cannot use that backend)
+# ran 40k-row slices at every shape that fit in memory. So only half-precision SDPA slices at 16_384 rows.
+_FLASH_ATTN_BATCH_LIMIT = 40_000
+_SDPA_HALF_BATCH_LIMIT = 16_384
+_SDPA_FP32_BATCH_LIMIT = 40_000
+
+# Attention over at most this many queries and keys (the encoder's per-token variable attention and
+# aggregation, and the level aggregation) is computed explicitly by `short_sequence_attention`. Flash
+# attention's 128-wide tiles are almost all padding at these lengths and it needs the 40k-row slices
+# above; the explicit form is 2.5-5x faster per call at 0.25 deg.
+SHORT_SEQUENCE_MAX = 32
+# Rows per explicit attention call: bounds the fp32 copies of q/k (the large model's atmospheric
+# variable aggregation, 842k rows x 5 variables x 512 channels, is 8.6 GiB in fp32).
+_SHORT_SEQUENCE_CHUNK_ROWS = 65_536
+
+
+def short_sequence_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, dropout_p: float,
+                             training: bool) -> torch.Tensor:
+    """softmax(q·kᵀ/√d)·v for short sequences: logits and softmax in fp32, products in `v`'s dtype.
+
+    The logits are computed with autocast disabled: under autocast einsum runs in bf16 even on fp32
+    inputs, and trained level aggregators reach |logits| ~ 1e5 (ESFM_s_nm_ft), where a bf16 step is
+    512 and the near-argmax softmax picks different keys than flash attention (fp32 accumulators).
+    Rows are processed in chunks of `_SHORT_SEQUENCE_CHUNK_ROWS` to bound the fp32 q/k copies.
+
+    Args:
+        q (torch.Tensor): Queries of shape `(b, lq, h, d)`.
+        k (torch.Tensor): Keys of shape `(b, lk, h, d)`.
+        v (torch.Tensor): Values of shape `(b, lk, h, d)`.
+        dropout_p (float): Dropout on the attention probabilities, applied only when `training`.
+        training (bool): Whether to apply dropout.
+
+    Returns:
+        torch.Tensor: Output of shape `(b, lq, h, d)` in `v`'s dtype.
+    """
+    return torch.cat([
+        _short_sequence_attention_chunk(qc, kc, vc, dropout_p, training)
+        for qc, kc, vc in zip(*(t.split(_SHORT_SEQUENCE_CHUNK_ROWS) for t in (q, k, v)))
+    ])
+
+
+def _short_sequence_attention_chunk(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, dropout_p: float,
+                                    training: bool) -> torch.Tensor:
+    """`short_sequence_attention` on one chunk of rows."""
+    with torch.autocast(device_type=q.device.type, enabled=False):
+        logits = torch.einsum("blhd,bmhd->bhlm", q.float(), k.float())
+    probs = (logits * q.shape[-1] ** -0.5).softmax(-1)
+    probs = F.dropout(probs, dropout_p, training=training)
+    return torch.einsum("bhlm,bmhd->blhd", probs.to(v.dtype), v)
+
 
 class MLP(nn.Module):
     """A simple one-hidden-layer MLP."""
@@ -166,8 +221,21 @@ class PerceiverAttention(nn.Module):
         q = self.ln_q(q)
         
         attn_dropout = self.attn_drop if self.training else 0.0
-        
-        use_flash_attn = latents.dtype in [torch.float16, torch.bfloat16]
+
+        autocast = torch.is_autocast_enabled()
+        if (autocast or v.dtype == torch.float32) and max(latents.shape[1], x.shape[1]) <= SHORT_SEQUENCE_MAX:
+            # Short sequences (e.g. one query over a token's variables): explicit attention, no 40k-row
+            # slicing. Under autocast in bf16 (q/k are fp32 after the layer norms); without it (the fp32
+            # decoder) in fp32, matching SDPA up to summation order.
+            dtype = torch.bfloat16 if autocast else torch.float32
+            q, k, v = (rearrange(t.to(dtype), "b l (h d) -> b l h d", h=h) for t in (q, k, v))
+            out = short_sequence_attention(q, k, v, attn_dropout, self.training)
+            return self.to_out(rearrange(out, "B L H D -> B L (H D)"))
+
+        use_flash_attn = (
+            latents.dtype in [torch.float16, torch.bfloat16]
+            and latents.device.type in _FLASH_ATTN_DEVICE_TYPES
+        )
         if self.disable_flashattention or self.flash_attn_func is None:
             use_flash_attn = False
         if use_flash_attn:
@@ -178,7 +246,7 @@ class PerceiverAttention(nn.Module):
             ## flash attention
             q, k, v = map(lambda t: rearrange(t, "b l (h d) -> b l h d", h=h), (q, k, v)) 
             b = q.shape[0]
-            b_lim = 40_000 # flash attention has some significantly lower limit on tensor size that throws "RuntimeError: CUDA error: invalid configuration argument". Slicing the tensor into smaller batches to avoid this error.
+            b_lim = _FLASH_ATTN_BATCH_LIMIT
             if b < b_lim:
                 out = self.flash_attn_func(q, k, v, dropout_p=attn_dropout)
             else:
@@ -191,8 +259,8 @@ class PerceiverAttention(nn.Module):
             out = rearrange(out, "B L H D -> B L (H D)")  # (B, L1, D)
         else:
             ## normal attention
-            q, k, v = map(lambda t: rearrange(t, "b l (h d) -> b h l d", h=h), (q, k, v)) 
-            b_lim = 40_000
+            q, k, v = map(lambda t: rearrange(t, "b l (h d) -> b h l d", h=h), (q, k, v))
+            b_lim = _SDPA_HALF_BATCH_LIMIT if q.dtype in (torch.float16, torch.bfloat16) else _SDPA_FP32_BATCH_LIMIT
             if q.shape[0] < b_lim:
                 out = F.scaled_dot_product_attention(q, k, v, dropout_p=attn_dropout)
             else:
