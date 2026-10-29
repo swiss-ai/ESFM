@@ -340,6 +340,7 @@ def main():
         disable_flashattention=args.disable_flashattention,
         stabilise_level_agg=args.stabilise_level_agg,
         add_qk_norm_to_swin3d=args.add_qk_norm_to_swin3d,
+        fix_qk_norm_in_swin3d=args.fix_qk_norm_in_swin3d,
         encoder_activation_checkpointing=encoder_act_checkpointing,  # Enable extensive checkpointing for large models
         absolute_time_embedding_in_minutes=args.absolute_time_embedding_in_minutes, # use absolute time embedding in minutes
         add_token_pos_embedding_in_decoder=args.add_token_pos_embedding_in_decoder, # add token positional embedding in the decoder

@@ -95,6 +95,7 @@ class ESFM(torch.nn.Module):
         use_resolution_specific_patch_tokenizers: bool = False,
         disable_flashattention: bool = False,
         add_qk_norm_to_swin3d: bool = False,
+        fix_qk_norm_in_swin3d: bool = False,
         encoder_activation_checkpointing: bool = True,
         decoder_activation_checkpointing: bool = True,
         var_attn_chunk_size: int | None = None,
@@ -164,6 +165,8 @@ class ESFM(torch.nn.Module):
             variable_aggregation (bool, optional): specify if we want to use self-attention mechanism
                 across variables and them apply variable aggregation
             add_qk_norm_to_swin3d (bool, optional): Add layer norm layers to Q & K in the Swin3D transformer blocks of the backbone.
+            fix_qk_norm_in_swin3d (bool, optional): Bugfix so the Swin3D QK-norm is also applied on the
+                masked (shifted-window) and non-flash attention paths. Defaults to `False`.
             surf_vars_nan_to_zero: tuple[str, ...]: Normalise a surface-level variable. NaN content within these vars will be replaced with zero
             absolute_time_embedding_in_minutes: bool, whether to use absolute time embedding in minutes instead of hours
             add_token_pos_embedding_in_decoder: bool, whether to add token positional embedding in the decoder
@@ -247,6 +250,7 @@ class ESFM(torch.nn.Module):
             lora_mode=lora_mode,
             disable_flashattention=disable_flashattention,
             adding_qk_norm=add_qk_norm_to_swin3d,
+            fix_qk_norm=fix_qk_norm_in_swin3d,
         )
 
         if use_legacy_tails: 

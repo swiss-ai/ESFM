@@ -99,6 +99,7 @@ class WindowAttention(nn.Module):
         use_lora: bool = False,
         disable_flashattention: bool = False,
         adding_qk_norm: bool = False,
+        fix_qk_norm: bool = False,
     ) -> None:
         """Initialise.
 
@@ -121,6 +122,11 @@ class WindowAttention(nn.Module):
                 step from the second step onward. LoRA is zeroed out at step 0 in both modes.
                 Defaults to `"single"`.
             use_lora (bool, optional): Enable LoRA. By default, LoRA is disabled.
+            adding_qk_norm (bool, optional): Apply LayerNorm to Q and K. Defaults to `False`.
+            fix_qk_norm (bool, optional): Bugfix for `adding_qk_norm`. Without it, the QK-norm is
+                only applied on the flash-attention path without masking; the masked
+                (shifted-window) and non-flash paths use the unnormalized Q and K. Defaults to
+                `False` to keep the behaviour of existing checkpoints.
         """
         super().__init__()
 
@@ -137,6 +143,7 @@ class WindowAttention(nn.Module):
         self.disable_flashattention = disable_flashattention
         self.flash_attn_qkvpacked_func = None
         self.adding_qk_norm = adding_qk_norm
+        self.fix_qk_norm = fix_qk_norm
 
         if not disable_flashattention:
             try:
@@ -195,8 +202,13 @@ class WindowAttention(nn.Module):
             q_ln = q_ln.to(orig_dtype)
             k_ln = k_ln.to(orig_dtype)
 
-            # Reconstructure the qkv with normalized q and k
+            # Reconstructure the qkv with normalized q and k (flash-attn branch)
             qkv = torch.stack([q_ln, k_ln, v], dim=0)
+
+            if self.fix_qk_norm:
+                # Rebind q and k: the masked (shifted-window) branch and the non-flash fallback
+                # below read q/k directly, not the packed qkv.
+                q, k = q_ln, k_ln
 
         attn_dropout = self.attn_drop if self.training else 0.0
         use_flash_attn = True
@@ -437,6 +449,7 @@ class Swin3DTransformerBlock(nn.Module):
         use_lora: bool = False,
         disable_flashattention: bool = False,
         adding_qk_norm: bool = False,
+        fix_qk_norm: bool = False,
     ) -> None:
         """Initialise.
 
@@ -485,6 +498,7 @@ class Swin3DTransformerBlock(nn.Module):
             lora_mode=lora_mode,
             disable_flashattention=disable_flashattention,
             adding_qk_norm=adding_qk_norm,
+            fix_qk_norm=fix_qk_norm,
         )
 
         self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
@@ -700,6 +714,7 @@ class BasicLayer3D(nn.Module):
         use_lora: bool = False,
         disable_flashattention: bool = False,
         adding_qk_norm: bool = False,
+        fix_qk_norm: bool = False,
     ) -> None:
         """Initialise.
 
@@ -756,6 +771,7 @@ class BasicLayer3D(nn.Module):
                     lora_mode=lora_mode,
                     disable_flashattention=disable_flashattention,
                     adding_qk_norm=adding_qk_norm,
+                    fix_qk_norm=fix_qk_norm,
                 )
                 for i in range(depth)
             ]
@@ -842,6 +858,7 @@ class Swin3DTransformerBackbone(nn.Module):
         use_lora: bool = False,
         disable_flashattention: bool = False,
         adding_qk_norm: bool = False,
+        fix_qk_norm: bool = False,
     ) -> None:
         """
         Args:
@@ -909,6 +926,7 @@ class Swin3DTransformerBackbone(nn.Module):
                 lora_mode=lora_mode,
                 disable_flashattention=disable_flashattention,
                 adding_qk_norm=adding_qk_norm,
+                fix_qk_norm=fix_qk_norm,
             )
             self.encoder_layers.append(layer)
 
@@ -933,6 +951,7 @@ class Swin3DTransformerBackbone(nn.Module):
                 lora_mode=lora_mode,
                 disable_flashattention=disable_flashattention,
                 adding_qk_norm=adding_qk_norm,
+                fix_qk_norm=fix_qk_norm,
             )
             self.decoder_layers.append(layer)
 

@@ -297,6 +297,14 @@ def get_parser():
         action=argparse.BooleanOptionalAction,
         default=False,
         help="Applies additional qk layer norm to swin3d. [default: False]",
+    )
+    parser.add_argument(
+        "--fix_qk_norm_in_swin3d",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Bugfix for --add_qk_norm_to_swin3d: also apply the qk layer norm on the masked "
+             "(shifted-window) and non-flash attention paths. Without it, the norm is only applied "
+             "on the flash-attention path without masking. [default: False]",
     )    
 
     parser.add_argument(

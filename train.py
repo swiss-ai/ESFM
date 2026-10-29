@@ -397,6 +397,7 @@ def main():
         disable_flashattention=args.disable_flashattention,
         stabilise_level_agg=args.stabilise_level_agg,
         add_qk_norm_to_swin3d=args.add_qk_norm_to_swin3d,
+        fix_qk_norm_in_swin3d=args.fix_qk_norm_in_swin3d,
         encoder_activation_checkpointing=encoder_act_checkpointing,  # Enable extensive checkpointing for large models
         decoder_activation_checkpointing=decoder_act_checkpointing,  # Enable extensive checkpointing for large models
         var_attn_chunk_size=var_attn_chunk_size,
