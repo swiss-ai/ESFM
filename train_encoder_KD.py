@@ -383,6 +383,7 @@ def main():
         drop_path=0.2,
         num_ensemble = args.num_ensemble,  # Number of ensemble members
         variable_aggregation= args.variable_aggregation,
+        axial_attention=args.axial_attention,
         use_resolution_specific_patch_tokenizers = args.use_resolution_specific_patch_tokenizers,
         disable_flashattention=args.disable_flashattention,
         stabilise_level_agg=args.stabilise_level_agg,

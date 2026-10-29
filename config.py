@@ -214,6 +214,7 @@ def get_parser():
     parser.add_argument("--max_grad_norm", type=float, default=1.0, help="max_grad_norm")
     parser.add_argument("--log_norms", action=argparse.BooleanOptionalAction, default=False, help="Logs gradient and weight norms of model [default: False]",)
     parser.add_argument("--log_norm_every_n_steps", type=int, default=100, help="log freq for weight and gradient norms on wandb")
+    parser.add_argument("--ckpt_every_n_train_steps", type=int, default=100, help="checkpoint saving freq in training steps")
     parser.add_argument("--log_val_predictions_as_images", action=argparse.BooleanOptionalAction, default=False, help="Logs the first sample in validation step as pictures to W&B [default: False]",)
     ## ensemble args
     parser.add_argument("--num_ensemble", type=int, default=1, help="number of ensembles")

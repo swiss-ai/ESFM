@@ -289,7 +289,7 @@ class WeatherBench2Raw(Dataset):
         
         if extended_path:
             for var in extended_vars:
-                self.dict_ds_extended[d_srf_abr2full[var]] = xr.open_zarr(extended_path[var])[d_srf_abr2full[var].replace('_log', '')].sel(latitude=self.lat, longitude=self.lon)
+                self.dict_ds_extended[d_srf_abr2full[var]] = xr.open_zarr(extended_path[var], chunks=None)[d_srf_abr2full[var].replace('_log', '')].sel(latitude=self.lat, longitude=self.lon) # chunks=None as for self.ds: no dask in the workers
             # self.ds = self.ds.assign({var: self.dict_ds_extended[var] for var in extended_vars}) # remove because not lazy load
 
         

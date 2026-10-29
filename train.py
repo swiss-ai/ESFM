@@ -3,6 +3,7 @@
 # Licensed under the MIT License. See the LICENSE file in the repository root.
 
 import logging
+import dataclasses
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 import os
 import glob
@@ -64,7 +65,7 @@ if args.load_aurora_pretrain_weights and args.load_custom_pretrain_weights_str i
 wandb_key = os.getenv("WANDB_KEY")
 if is_rank0:  # Only attempt login on rank 0
     if wandb_key:
-        wandb.login(key=wandb_key)
+        os.environ["WANDB_API_KEY"] = wandb_key # read by wandb.init; wandb.login(key=...) rejects new 86-char keys in older wandb (0.19.8 in the container)
     else:
         if args.wnb_mode != 'disabled':
             print(f'WANDB_KEY is not set. Please set WANDB_KEY to use wandb. not logging to WANDB.')
@@ -162,6 +163,23 @@ def _make_batch(batch_dict, *, normalize_target: bool = True):
 # # Define collate functions for training and validation
 collate_fn_train = lambda samples: _make_batch(torch.utils.data.default_collate(samples), normalize_target=True)
 collate_fn_val   = lambda samples: _make_batch(torch.utils.data.default_collate(samples), normalize_target=False)
+
+
+def normalised_loss_inputs(batch_pred, batch_std, batch_ens, batch_y):
+    """(mean, std, ensemble, target) for loss_fn, normalised as during training, from eval-mode (unnormalised) outputs and target"""
+    batch_std = dataclasses.replace(
+        batch_std,
+        metadata=dataclasses.replace(
+            batch_std.metadata,
+            locations={k: 0 for k in batch_std.metadata.locations}, # a spread is only divided by the scale
+        ),
+    )
+    return (
+        batch_pred.normalise(surf_stats=None),
+        batch_std.normalise(surf_stats=None),
+        batch_ens.normalise(surf_stats=None),
+        batch_y.normalise(surf_stats=None), # as in collate_fn_train
+    )
 
 
 def load_data(yaml_path, datasets_type, yaml_masking_path):
@@ -265,7 +283,7 @@ def load_data(yaml_path, datasets_type, yaml_masking_path):
             pin_memory=True,  
             persistent_workers=True,
             collate_fn=collate_fn_train,
-            prefetch_factor=4,
+            prefetch_factor=args.prefetch_factor,
         )
         dataloader_val = DataLoader(
             dataset_val[0],
@@ -395,6 +413,7 @@ def main():
         drop_path=0.2,
         num_ensemble = args.num_ensemble,  # Number of ensemble members
         variable_aggregation= args.variable_aggregation,
+        axial_attention=args.axial_attention,
         use_resolution_specific_patch_tokenizers = args.use_resolution_specific_patch_tokenizers,
         disable_flashattention=args.disable_flashattention,
         stabilise_level_agg=args.stabilise_level_agg,
@@ -709,8 +728,10 @@ def main():
             
             # Main task loss
             task_loss, loss_dict = self.loss_fn(batch_pred, batch_std, batch_ens, batch_obj_y, latitude_weight_enabled=latitude_weight_enabled)
+            # same loss on normalised values as loss_train, so variables in different units are comparable; selects the best checkpoints
+            norm_loss, norm_loss_dict = self.loss_fn(*normalised_loss_inputs(batch_pred, batch_std, batch_ens, batch_obj_y), latitude_weight_enabled=latitude_weight_enabled)
             del batch_std, batch_ens
-            
+
             total_loss = task_loss
 
             del batch_pred,batch_obj_y
@@ -719,6 +740,9 @@ def main():
             loss_dict = {f'{key}_val': value for key, value in loss_dict.items()}
             loss_dict['loss_val'] = total_loss.detach().item()
             self.log_dict(loss_dict, batch_size=self.batch_size, sync_dist=True, prog_bar=True)
+            norm_loss_dict = {f'val/{key}': value for key, value in norm_loss_dict.items()} # named like train/<key>
+            norm_loss_dict['loss_val_norm'] = norm_loss.detach().item()
+            self.log_dict(norm_loss_dict, batch_size=self.batch_size, sync_dist=True)
             
         def on_load_checkpoint(self, checkpoint: dict) -> None:
             """
@@ -882,7 +906,7 @@ def main():
     modelcheckpoint_callback_regular_step_save = ModelCheckpoint(
         dirpath=args.log_dir, 
         filename="model_ckpt-{step}-{loss_train:.2f}", 
-        every_n_train_steps=100, 
+        every_n_train_steps=args.ckpt_every_n_train_steps,
         save_last=True,
         save_top_k = -1, ## save all ckpts.
     )
@@ -894,8 +918,8 @@ def main():
     )
     modelcheckpoint_callback_best_val_save = ModelCheckpoint(
         dirpath=args.log_dir, 
-        filename="model_best_val_ckpt-{epoch}-{step}-{loss_val:.2f}", 
-        monitor="loss_val", 
+        filename="model_best_val_ckpt-{epoch}-{step}-{loss_val_norm:.3f}",
+        monitor="loss_val_norm", # loss_val sums variables in different units
         save_top_k=3, 
         mode='min', 
         save_on_train_epoch_end=False
